@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  
+    {% if productos %}
+        <table border="1">
+            <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Cantidad</th>
+                <th>Seleccionar</th>
+            </tr>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.ID }}</td>
+                <td>{{ producto.producto }}</td>
+                <td>{{ producto.precio }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>
+                    <input type="number" id="cantidad-{{ producto.ID }}" name="cantidad" min="0" max="{{ producto.stock }}" value="0">
+                </td>
+                <td><input type="checkbox" class="checkbox" data-id="{{ producto.ID }}"></td>
+            </tr>
+            {% endfor %}
+        </table>
+        
+        <!-- Botón de comprar -->
+        <button onclick="confirmarComprar()">Comprar</button>
+
+        <!-- Botón de cerrar sesión -->
+        <button onclick="confirmarSalir()">Cerrar Sesión</button>
+
+        <!-- Script para confirmar la compra -->
+        <script>
+            function confirmarSalir() {
+                if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+                    // Si el usuario hace clic en "Sí", redirige a la página de inicio de sesión
+                    window.location.href = "/logout";
+                }
+            }
+
+            function confirmarComprar() {
+                var mensaje = "";
+                var todosValidos = true;
+                var totalComprado = 0;
+                var alMenosUnoSeleccionado = false; // Variable para verificar si al menos un producto ha sido seleccionado
+                var totalCantidad = 0; // Variable para almacenar la cantidad total de productos seleccionados
+
+                // Verificar si se ha seleccionado al menos un producto
+                var checkboxes = document.querySelectorAll('.checkbox');
+                var seleccionados = [];
+                checkboxes.forEach(function(checkbox) {
+                    if (checkbox.checked) {
+                        alMenosUnoSeleccionado = true; // Se marca como verdadero si al menos un producto ha sido seleccionado
+                        var id = checkbox.getAttribute('data-id');
+                        var cantidad = document.getElementById('cantidad-' + id).value;
+                        totalCantidad += parseInt(cantidad); // Suma la cantidad del producto actual al total
+                        totalComprado += parseInt(cantidad);
+                        // Validar que la cantidad no exceda la existencia disponible
+                        if (parseInt(cantidad) > parseInt(document.getElementById('cantidad-' + id).getAttribute('max'))) {
+                            mensaje += "No hay suficiente stock para el producto ID " + id + "\n";
+                            todosValidos = false;
+                        } else {
+                            seleccionados.push({ id: id, cantidad: cantidad });
+                        }
+                    }
+                });
+
+                // Si no se ha seleccionado ningún producto o la cantidad total es cero, mostrar un mensaje de advertencia
+                if (!alMenosUnoSeleccionado || totalCantidad === 0) {
+                    alert("Favor de agregar al menos un artículo.");
+                    return; // Salir de la función para evitar más procesamiento
+                }
+
+                // Si se ha seleccionado al menos un producto y todos son válidos, mostrar mensaje de compra exitosa
+                if (seleccionados.length > 0 && todosValidos) {
+                    // Aquí puedes enviar los productos seleccionados y sus cantidades al servidor para realizar la compra
+                    // Por ahora, solo mostraremos los productos seleccionados en la consola
+                    console.log("Productos seleccionados:", seleccionados);
+                    mensaje = "Usted ha comprado " + totalComprado + " artículo(s).";
+                    alert(mensaje);
+                } else if (!todosValidos) {
+                    // Si hay productos con cantidades inválidas, mostrar el mensaje de error
+                    alert(mensaje);
+                }
+            }
+        </script>
+        
+    {% else %}
+        <p>No hay productos disponibles.</p>
+    {% endif %}
+
+    {% if 'username' not in session %}
+        <p><a href="{{ url_for('login') }}">Iniciar sesión</a></p>
+    {% endif %}
+</body>
+</html>
